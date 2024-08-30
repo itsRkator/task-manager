@@ -7,7 +7,7 @@ import Login from "./components/Login";
 import SignUp from "./components/Signup";
 import Profile from "./components/Profile";
 import ToolbarComponent from "./components/Toolbar";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./contexts/AuthContext";
 
 interface RouteProps {
   element: ReactElement;
@@ -29,7 +29,7 @@ const App = () => {
     <>
       <ToolbarComponent />
       <Routes>
-        <Route
+        <Route key={'/'}
           path="/"
           element={
             <PrivateRoute
@@ -38,7 +38,7 @@ const App = () => {
             />
           }
         />
-        <Route
+        <Route key={'/login'}
           path="/login"
           element={
             <PublicRoute
@@ -47,7 +47,7 @@ const App = () => {
             />
           }
         />
-        <Route
+        <Route key={"/signup"}
           path="/signup"
           element={
             <PublicRoute
@@ -56,7 +56,7 @@ const App = () => {
             />
           }
         />
-        <Route
+        <Route key={"/"}
           path="/profile"
           element={
             <PrivateRoute

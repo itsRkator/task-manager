@@ -10,7 +10,8 @@ import React, {
   SetStateAction,
 } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import apiAuthService from "./services/apiAuthService";
+import apiAuthService from "../services/apiAuthService";
+import { useNotification } from "./NotificationContext";
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -35,10 +36,12 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const { showNotification } = useNotification();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Initial check for token on component mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -46,15 +49,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Handle Google login redirect
   useEffect(() => {
-    // Check if the URL contains a token (after Google login redirect)
     const params = new URLSearchParams(location.search);
     const token = params.get("token");
 
     if (token) {
       localStorage.setItem("token", token);
       setIsAuthenticated(true);
-      navigate("/"); // Redirect to the home page or a protected route
+      navigate("/"); // Redirect to a protected route
     }
   }, [location, navigate]);
 
@@ -64,12 +67,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const response = await apiAuthService.login(email, password);
         localStorage.setItem("token", response.data.token);
         setIsAuthenticated(true);
+        showNotification(
+          "Login successful! Redirecting to homepage.",
+          "success"
+        );
         navigate("/");
       } catch (error) {
         console.error("Login failed", error);
+        showNotification(
+          "Login failed. Please check your credentials and try again.",
+          "error"
+        );
       }
     },
-    [navigate]
+    [navigate, showNotification]
   );
 
   const googleLogin = useCallback(() => {
@@ -84,7 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value = useMemo(
     () => ({ isAuthenticated, login, logout, googleLogin, setIsAuthenticated }),
-    [isAuthenticated, login, logout, googleLogin]
+    [isAuthenticated, login, logout, googleLogin] // Removed setIsAuthenticated from dependencies
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

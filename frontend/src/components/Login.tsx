@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Box,
   Button,
@@ -161,19 +161,28 @@ const Login: React.FC = () => {
             fullWidth
             variant="contained"
             color="primary"
-            sx={{ mt: 2 }}
+            sx={{ mt: 2, textTransform: "none" }}
           >
             Login
           </Button>
           <Typography variant="body2" sx={{ mt: 2 }} textAlign="center">
             Don't have an account?{" "}
-            <Button color="primary" onClick={() => navigate("/signup")}>
+            <Button
+              sx={{ textTransform: "none" }}
+              color="primary"
+              onClick={() => navigate("/signup")}
+            >
               Sign Up
             </Button>
           </Typography>
           <Divider sx={{ my: 2 }}>OR</Divider>
           <Typography textAlign="center">
-            <Button variant="contained" color="primary" onClick={googleLogin}>
+            <Button
+              sx={{ textTransform: "none" }}
+              variant="contained"
+              color="primary"
+              onClick={googleLogin}
+            >
               Login with &nbsp;<b>Google</b>
             </Button>
           </Typography>
