@@ -12,12 +12,14 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TaskCreateProps } from "../types";
 import apiTaskService from "../services/apiTaskService";
+import { useNotification } from "../contexts/NotificationContext";
 
 const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
   onTaskCreateAndUpdate,
   buttonLabel,
   task,
 }) => {
+  const { showNotification } = useNotification();
   const [formData, setFormData] = useState({
     title: task?.title || "",
     description: task?.description || "",
@@ -54,6 +56,7 @@ const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
 
   const handleCreateOrUpdateTask = async () => {
     const { title, description, dueDate, reminder } = formData;
+
     try {
       if (!task?._id) {
         await apiTaskService.createTask(token, {
@@ -62,18 +65,18 @@ const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
           dueDate,
           reminder,
         });
+        showNotification("Task created successfully.", "success");
       } else {
-        await apiTaskService.updateTask(token, task._id, {
-          title,
-          description,
-          dueDate,
-          reminder,
-        });
+        onTaskCreateAndUpdate(task?._id, title, description);
+        showNotification("Task updated successfully.", "success");
       }
-      onTaskCreateAndUpdate();
       handleClose();
     } catch (error) {
       console.error("Failed to save task", error);
+      showNotification(
+        "An error occurred while saving the task. Please try again.",
+        "error"
+      );
     }
   };
 
@@ -83,13 +86,14 @@ const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
       resetForm();
     }
     setOpen(false);
-  }, [resetForm]);
+  }, [resetForm, task?._id]);
 
   const isEditing = Boolean(task?._id);
 
   return (
     <>
       <Button
+        sx={{ textTransform: "none" }}
         style={{ margin: "0.25rem" }}
         variant="contained"
         color="primary"
@@ -152,10 +156,16 @@ const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCreateOrUpdateTask} variant="contained">
+          <Button
+            sx={{ textTransform: "none" }}
+            onClick={handleCreateOrUpdateTask}
+            variant="contained"
+          >
             {isEditing ? "Save" : "Create"}
           </Button>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button sx={{ textTransform: "none" }} onClick={handleClose}>
+            Cancel
+          </Button>
         </DialogActions>
       </Dialog>
     </>
