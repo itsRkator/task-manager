@@ -12,6 +12,6 @@ const userSchema = new mongoose.Schema({
   googleToken: { type: String },
   googleTokenSecret: { type: String },
   avatar: { type: String, default: defaultAvatarURL },
-});
+}, {timestamps: true});
 
 module.exports = mongoose.model("User", userSchema);
