@@ -50,6 +50,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@testing-library/react": "^16.0.1",
     "@types/lodash.debounce": "^4.0.9",
     "@types/react-beautiful-dnd": "^13.1.8",
