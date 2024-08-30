@@ -235,8 +235,8 @@ const SignUp: React.FC = () => {
           >
             Sign Up
           </Button>
-          <Typography variant="body2" sx={{ mt: 2 }} textAlign='center'>
-            Don't have an account?{" "}
+          <Typography variant="body2" sx={{ mt: 2 }} textAlign="center">
+            Already have an account?{" "}
             <Button color="primary" onClick={() => navigate("/login")}>
               Login
             </Button>

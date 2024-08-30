@@ -1,11 +1,6 @@
 // TaskBoard.tsx
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "react-beautiful-dnd";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import apiTaskService from "../services/apiTaskService";
 import {
   Box,
@@ -19,12 +14,16 @@ import {
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import TaskCreate from "./TaskCreate";
+import debounce from "lodash.debounce";
+
 import TaskColumn from "./TaskColumn";
 import { Task } from "../types";
+import CreateAndUpdateTask from "./CreateAndUpdateTask";
 
 const TaskBoard: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [todoTasks, setTodoTasks] = useState<Task[]>([]);
+  const [inProgressTasks, setInProgressTasks] = useState<Task[]>([]);
+  const [doneTasks, setDoneTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("createdAt");
   const token = localStorage.getItem("token");
@@ -32,21 +31,32 @@ const TaskBoard: React.FC = () => {
   const fetchTasks = useCallback(async () => {
     if (token) {
       try {
-        const response = await apiTaskService.fetchTasks(token);
-        setTasks(response.data);
+        const response = await apiTaskService.fetchTasks(token, {
+          search: searchQuery,
+          sortBy: sortOption,
+          sortOrder: "asc",
+        });
+        setTodoTasks(
+          response.data.filter((task: Task) => task.status === "TODO")
+        );
+        setInProgressTasks(
+          response.data.filter((task: Task) => task.status === "IN PROGRESS")
+        );
+        setDoneTasks(
+          response.data.filter((task: Task) => task.status === "DONE")
+        );
       } catch (err) {
         console.error("Failed to fetch tasks", err);
       }
     }
-  }, [token]);
+  }, [token, searchQuery, sortOption]);
 
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
   const handleDragDrop = async (results: DropResult) => {
-    console.log(results);
-    const { source, destination, type, draggableId } = results;
+    const { source, destination, type } = results;
 
     if (!destination) return;
 
@@ -57,52 +67,84 @@ const TaskBoard: React.FC = () => {
       return;
 
     if (type === "group") {
-      const updatedTasks = [...tasks];
+      const sourceStatus = source.droppableId.split("-")[0];
+      const destinationStatus = destination.droppableId.split("-")[0];
+
+      console.log(sourceStatus, destinationStatus);
+
       const sourceIndex = source.index;
       const destinationIndex = destination.index;
-      const [removedTask] = updatedTasks.splice(sourceIndex, 1);
-      removedTask.status = destination.droppableId.split("-")[0] as
-        | "TODO"
-        | "IN PROGRESS"
-        | "DONE";
-      updatedTasks.splice(destinationIndex, 0, removedTask);
-      console.log("Task Removed: ", removedTask);
-      await apiTaskService.updateTask(token!, removedTask._id, removedTask);
-      const updatedTasksFromDB = (await apiTaskService.fetchTasks(token!)).data;
-      console.log("newly fetched tasks: ", updatedTasksFromDB);
-      return setTasks(updatedTasksFromDB);
+      let removedTask;
+
+      const updatedTodoTasks = [...todoTasks];
+      const updatedInProgressTasks = [...inProgressTasks];
+      const updatedDoneTasks = [...doneTasks];
+
+      console.log(sourceIndex);
+      if (sourceStatus === "TODO") {
+        removedTask = updatedTodoTasks.splice(sourceIndex, 1)[0];
+      } else if (sourceStatus === "IN PROGRESS") {
+        removedTask = updatedInProgressTasks.splice(sourceIndex, 1)[0];
+      } else if (sourceStatus === "DONE") {
+        removedTask = updatedDoneTasks.splice(sourceIndex, 1)[0];
+      }
+
+      console.log(removedTask);
+
+      if (removedTask) {
+        if (destinationStatus === "TODO") {
+          updatedTodoTasks.splice(destinationIndex, 0, removedTask);
+          setTodoTasks(updatedDoneTasks);
+        } else if (destinationStatus === "IN PROGRESS") {
+          updatedInProgressTasks.splice(destinationIndex, 0, removedTask);
+          setInProgressTasks(updatedInProgressTasks);
+        } else if (destinationStatus === "DONE") {
+          updatedDoneTasks.splice(destinationIndex, 0, removedTask);
+          setDoneTasks(updatedDoneTasks);
+        }
+
+        removedTask.status = destinationStatus as
+          | "TODO"
+          | "IN PROGRESS"
+          | "DONE";
+
+        if (token) {
+          await apiTaskService.updateTask(token, removedTask._id, removedTask);
+        }
+      }
+      fetchTasks();
     }
   };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) =>
-    setSearchQuery(event.target.value);
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      // Call the API or handle the search logic here
+      console.log("Searching for:", query);
+    }, 300), // Adjust the debounce delay (300 ms) as needed
+    []
+  );
 
-  const handleSortChange = (event: SelectChangeEvent<string>) =>
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+    debouncedSearch(query);
+  };
+
+  const handleSortChange = (event: SelectChangeEvent<string>) => {
     setSortOption(event.target.value);
-
-  const filteredTasks = tasks
-    .filter((task) =>
-      task.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      const dateA =
-        sortOption === "dueDate"
-          ? new Date(a.dueDate ?? "")
-          : new Date(a.createdAt);
-      const dateB =
-        sortOption === "dueDate"
-          ? new Date(b.dueDate ?? "")
-          : new Date(b.createdAt);
-      return dateA.getTime() - dateB.getTime();
-    });
+  };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 5 }}>
       <Typography variant="body1" align="left" gutterBottom>
-        <TaskCreate onTaskCreated={fetchTasks} />
+        <CreateAndUpdateTask
+          onTaskCreateAndUpdate={fetchTasks}
+          buttonLabel="Add Task"
+        />
       </Typography>
-      <Box boxShadow={2}
-      padding={1.5}
+      <Box
+        boxShadow={2}
+        padding={1.5}
         display="flex"
         justifyContent="space-between"
         alignItems="center"
@@ -132,14 +174,27 @@ const TaskBoard: React.FC = () => {
       </Box>
       <DragDropContext onDragEnd={handleDragDrop}>
         <Grid container spacing={3}>
-          {["TODO", "IN PROGRESS", "DONE"].map((status) => (
-            <Grid key={status + new Date().getTime()} size={4}>
-              <TaskColumn
-                status={status as "TODO" | "IN PROGRESS" | "DONE"}
-                tasks={filteredTasks.filter((task) => task.status === status)}
-              />
-            </Grid>
-          ))}
+          <Grid key={"TODO"} size={4}>
+            <TaskColumn
+              refreshTask={fetchTasks}
+              status={"TODO"}
+              tasks={todoTasks}
+            />
+          </Grid>
+          <Grid key={"IN PROGRESS"} size={4}>
+            <TaskColumn
+              refreshTask={fetchTasks}
+              status={"IN PROGRESS"}
+              tasks={inProgressTasks}
+            />
+          </Grid>
+          <Grid key={"DONE"} size={4}>
+            <TaskColumn
+              refreshTask={fetchTasks}
+              status={"DONE"}
+              tasks={doneTasks}
+            />
+          </Grid>
         </Grid>
       </DragDropContext>
     </Container>

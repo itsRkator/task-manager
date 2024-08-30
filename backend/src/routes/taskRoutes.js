@@ -5,10 +5,30 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Get all Tasks
+// Get all Tasks with search and sorting
 router.get("/", authMiddleware, async (req, res) => {
-  const tasks = await Task.find({ userId: req.user.id });
-  res.json(tasks);
+  try {
+    const { search = "", sortBy = "createdAt", sortOrder = "asc" } = req.query;
+
+    // Build the search query
+    const searchQuery = {
+      userId: req.user.id,
+      title: { $regex: search, $options: "i" }, // Case-insensitive search
+    };
+
+    // Build the sort object
+    const sortOptions = {};
+    if (["createdAt", "dueDate"].includes(sortBy)) {
+      sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+    } else {
+      sortOptions["createdAt"] = 1; // Default sort by createdAt if invalid sortBy
+    }
+
+    const tasks = await Task.find(searchQuery).sort(sortOptions);
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching tasks", error });
+  }
 });
 
 // Create Task

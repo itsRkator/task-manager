@@ -91,7 +91,6 @@ router.get(
         expiresIn: "1h",
       });
 
-
       res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
     } catch (err) {
       console.error(`Error in Google OAuth: ${err}`);

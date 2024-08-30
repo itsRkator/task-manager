@@ -1,13 +1,18 @@
 // TaskColumn.tsx
 import React from "react";
-import { Paper, Typography, Box, Grid2 } from "@mui/material";
+import { Paper, Typography, Box } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import { Droppable } from "react-beautiful-dnd";
 import TaskItem from "./TaskItem";
 import { TaskColumnProps } from "../types";
 
-const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks }) => {
+const TaskColumn: React.FC<TaskColumnProps> = ({
+  status,
+  tasks,
+  refreshTask,
+}) => {
   return (
-    <Grid2 size="auto">
+    <Grid>
       <Droppable
         droppableId={status + "-" + Math.random().toString()}
         type="group"
@@ -35,14 +40,19 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ status, tasks }) => {
             </Typography>
             <Box>
               {tasks.map((task, index) => (
-                <TaskItem key={task._id} task={task} index={index} />
+                <TaskItem
+                  refreshTask={refreshTask}
+                  key={task._id}
+                  task={task}
+                  index={index}
+                />
               ))}
             </Box>
             {provided.placeholder}
           </Paper>
         )}
       </Droppable>
-    </Grid2>
+    </Grid>
   );
 };
 

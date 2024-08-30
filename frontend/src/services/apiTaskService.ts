@@ -3,9 +3,13 @@ import axios from "axios";
 const TASKS_API_URL = `${process.env.REACT_APP_API_URL}/tasks`;
 
 const apiTaskService = {
-  fetchTasks: (token: string) =>
+  fetchTasks: (
+    token: string,
+    params: { search: string; sortBy: string; sortOrder: string }
+  ) =>
     axios.get(`${TASKS_API_URL}`, {
       headers: { Authorization: `Bearer ${token}` },
+      params,
     }),
   createTask: (token: string, taskData: any) =>
     axios.post(`${TASKS_API_URL}`, taskData, {
