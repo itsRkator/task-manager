@@ -6,31 +6,59 @@ import { TaskItemProps } from "../types";
 import apiTaskService from "../services/apiTaskService";
 import ViewTasDialog from "./ViewTasDialog";
 import CreateAndUpdateTask from "./CreateAndUpdateTask";
+import { useNotification } from "../contexts/NotificationContext";
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
+  const { showNotification } = useNotification();
   const token = localStorage.getItem("token");
   const [isDialogOpened, setIsDialogOpened] = useState(false);
 
   const updateTask = useCallback(
     async (id?: string, title?: string, description?: string) => {
       if (token && id && title && description) {
-        await apiTaskService.updateTask(token, id, { title, description });
-        refreshTask();
+        try {
+          await apiTaskService.updateTask(token, id, { title, description });
+          refreshTask();
+          showNotification("Task has been updated successfully.", "success");
+        } catch (error) {
+          console.error("Failed to update the task:", error);
+          showNotification(
+            "An error occurred while trying to update the task. Please try again.",
+            "error"
+          );
+        }
+      } else {
+        showNotification(
+          "Invalid input. Please check the task details.",
+          "error"
+        );
       }
     },
-    [token, refreshTask]
+    [token, refreshTask, showNotification]
   );
 
   const viewTaskDialogHandler = useCallback(() => {
     setIsDialogOpened((prev) => !prev);
   }, []);
 
-  const deleteTaskHandler = useCallback(async () => {
-    if (token) {
-      await apiTaskService.deleteTask(token, task._id);
-      refreshTask();
-    }
-  }, [token, task._id, refreshTask]);
+  const deleteTaskHandler = useCallback(
+    async (taskId: string) => {
+      if (token) {
+        try {
+          await apiTaskService.deleteTask(token, taskId); // Attempt to delete the task
+          refreshTask(); // Refresh the tasks if deletion is successful
+          showNotification("Task has been deleted successfully.", "success");
+        } catch (error) {
+          console.error("Failed to delete the task:", error); // Handle the error
+          showNotification(
+            "An error occurred while trying to delete the task. Please try again.",
+            "error"
+          );
+        }
+      }
+    },
+    [token, refreshTask, showNotification]
+  );
 
   return (
     <>
@@ -62,10 +90,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
             </Box>
             <Typography textAlign="right">
               <Button
+                sx={{ textTransform: "none" }}
                 size="small"
                 variant="contained"
                 color="error"
-                onClick={deleteTaskHandler}
+                onClick={() => deleteTaskHandler(task._id)}
               >
                 Delete
               </Button>
@@ -75,6 +104,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
                 buttonLabel="Edit"
               />
               <Button
+                sx={{ textTransform: "none" }}
                 size="small"
                 variant="contained"
                 color="primary"

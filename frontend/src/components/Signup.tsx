@@ -16,6 +16,7 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import apiAuthService from "../services/apiAuthService";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../contexts/NotificationContext";
 
 interface State {
   firstName: string;
@@ -28,6 +29,7 @@ interface State {
 }
 
 const SignUp: React.FC = () => {
+  const { showNotification } = useNotification();
   const [values, setValues] = useState<State>({
     firstName: "",
     lastName: "",
@@ -106,10 +108,16 @@ const SignUp: React.FC = () => {
         lastName: values.lastName,
         email: values.email,
         password: values.password,
+        confirmPassword: values.confirmPassword,
       });
+      showNotification(
+        "Registration successful. You can now log in.",
+        "success"
+      );
       navigate("/login");
     } catch (err) {
       console.error("Sign up failed", err);
+      showNotification("Sign up failed. Please try again later.", "error");
     }
   };
 
@@ -231,19 +239,24 @@ const SignUp: React.FC = () => {
             fullWidth
             variant="contained"
             color="primary"
-            sx={{ mt: 2 }}
+            sx={{ mt: 2, textTransform: "none" }}
           >
             Sign Up
           </Button>
           <Typography variant="body2" sx={{ mt: 2 }} textAlign="center">
             Already have an account?{" "}
-            <Button color="primary" onClick={() => navigate("/login")}>
+            <Button
+              sx={{ textTransform: "none" }}
+              color="primary"
+              onClick={() => navigate("/login")}
+            >
               Login
             </Button>
           </Typography>
           <Divider sx={{ my: 2 }}>OR</Divider>
           <Typography textAlign="center">
             <Button
+              sx={{ textTransform: "none" }}
               variant="contained"
               color="primary"
               onClick={handleGoogleSignUp}

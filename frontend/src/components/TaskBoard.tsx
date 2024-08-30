@@ -19,12 +19,15 @@ import debounce from "lodash.debounce";
 import TaskColumn from "./TaskColumn";
 import { Task } from "../types";
 import CreateAndUpdateTask from "./CreateAndUpdateTask";
+import { useNotification } from "../contexts/NotificationContext";
 
 const TaskBoard: React.FC = () => {
+  const { showNotification } = useNotification();
   const [todoTasks, setTodoTasks] = useState<Task[]>([]);
   const [inProgressTasks, setInProgressTasks] = useState<Task[]>([]);
   const [doneTasks, setDoneTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchParams, setSearchParams] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("createdAt");
   const token = localStorage.getItem("token");
 
@@ -32,7 +35,7 @@ const TaskBoard: React.FC = () => {
     if (token) {
       try {
         const response = await apiTaskService.fetchTasks(token, {
-          search: searchQuery,
+          search: searchParams,
           sortBy: sortOption,
           sortOrder: "asc",
         });
@@ -47,9 +50,15 @@ const TaskBoard: React.FC = () => {
         );
       } catch (err) {
         console.error("Failed to fetch tasks", err);
+        showNotification(
+          "Failed to fetch tasks. Please try again later.",
+          "error"
+        );
       }
+    } else {
+      showNotification("No token available. Please log in.", "error");
     }
-  }, [token, searchQuery, sortOption]);
+  }, [token, searchParams, sortOption, showNotification]);
 
   useEffect(() => {
     fetchTasks();
@@ -70,8 +79,6 @@ const TaskBoard: React.FC = () => {
       const sourceStatus = source.droppableId.split("-")[0];
       const destinationStatus = destination.droppableId.split("-")[0];
 
-      console.log(sourceStatus, destinationStatus);
-
       const sourceIndex = source.index;
       const destinationIndex = destination.index;
       let removedTask;
@@ -80,46 +87,58 @@ const TaskBoard: React.FC = () => {
       const updatedInProgressTasks = [...inProgressTasks];
       const updatedDoneTasks = [...doneTasks];
 
-      console.log(sourceIndex);
-      if (sourceStatus === "TODO") {
-        removedTask = updatedTodoTasks.splice(sourceIndex, 1)[0];
-      } else if (sourceStatus === "IN PROGRESS") {
-        removedTask = updatedInProgressTasks.splice(sourceIndex, 1)[0];
-      } else if (sourceStatus === "DONE") {
-        removedTask = updatedDoneTasks.splice(sourceIndex, 1)[0];
-      }
-
-      console.log(removedTask);
-
-      if (removedTask) {
-        if (destinationStatus === "TODO") {
-          updatedTodoTasks.splice(destinationIndex, 0, removedTask);
-          setTodoTasks(updatedDoneTasks);
-        } else if (destinationStatus === "IN PROGRESS") {
-          updatedInProgressTasks.splice(destinationIndex, 0, removedTask);
-          setInProgressTasks(updatedInProgressTasks);
-        } else if (destinationStatus === "DONE") {
-          updatedDoneTasks.splice(destinationIndex, 0, removedTask);
-          setDoneTasks(updatedDoneTasks);
+      try {
+        if (sourceStatus === "TODO") {
+          removedTask = updatedTodoTasks.splice(sourceIndex, 1)[0];
+        } else if (sourceStatus === "IN PROGRESS") {
+          removedTask = updatedInProgressTasks.splice(sourceIndex, 1)[0];
+        } else if (sourceStatus === "DONE") {
+          removedTask = updatedDoneTasks.splice(sourceIndex, 1)[0];
         }
 
-        removedTask.status = destinationStatus as
-          | "TODO"
-          | "IN PROGRESS"
-          | "DONE";
+        if (removedTask) {
+          if (destinationStatus === "TODO") {
+            updatedTodoTasks.splice(destinationIndex, 0, removedTask);
+            setTodoTasks(updatedTodoTasks);
+          } else if (destinationStatus === "IN PROGRESS") {
+            updatedInProgressTasks.splice(destinationIndex, 0, removedTask);
+            setInProgressTasks(updatedInProgressTasks);
+          } else if (destinationStatus === "DONE") {
+            updatedDoneTasks.splice(destinationIndex, 0, removedTask);
+            setDoneTasks(updatedDoneTasks);
+          }
 
-        if (token) {
-          await apiTaskService.updateTask(token, removedTask._id, removedTask);
+          removedTask.status = destinationStatus as
+            | "TODO"
+            | "IN PROGRESS"
+            | "DONE";
+
+          if (token) {
+            await apiTaskService.updateTask(
+              token,
+              removedTask._id,
+              removedTask
+            );
+          }
+          showNotification("Task moved successfully.", "success");
         }
+
+        // Refresh tasks to reflect the changes
+        fetchTasks();
+      } catch (error) {
+        console.error("Failed to update task status", error);
+        showNotification(
+          "Failed to move task. Please try again later.",
+          "error"
+        );
       }
-      fetchTasks();
     }
   };
 
   const debouncedSearch = useCallback(
     debounce((query: string) => {
       // Call the API or handle the search logic here
-      console.log("Searching for:", query);
+      setSearchParams(query);
     }, 300), // Adjust the debounce delay (300 ms) as needed
     []
   );

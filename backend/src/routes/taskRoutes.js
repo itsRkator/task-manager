@@ -59,7 +59,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
 });
 
 router.delete("/:id", authMiddleware, async (req, res) => {
-  id = req.params.id;
+  const id = req.params.id;
   await Task.findOneAndDelete(id);
   res.status(204).end();
 });

@@ -77,7 +77,12 @@ const ViewTasDialog: React.FC<ViewTaskProps> = ({
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} variant="contained" color="primary">
+        <Button
+          sx={{ textTransform: "none" }}
+          onClick={handleClose}
+          variant="contained"
+          color="primary"
+        >
           Close
         </Button>
       </DialogActions>
