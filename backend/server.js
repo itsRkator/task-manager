@@ -39,10 +39,19 @@ app.use(limiter);
 require("./src/config/passport")(passport);
 
 // MongoDB Connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("Connected to the database"))
-  .catch((err) => console.error(`Failed to connect database. Error: ${err}`));
+const connectDatabaseWithRetryMechanism = () => {
+  console.log("Attempting to connect to MongoDB...");
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => console.log("Connected to the database"))
+    .catch((err) => {
+      console.error(`Failed to connect database. Error: ${err}`);
+      console.log("Retrying in 5 seconds...");
+      setTimeout(connectDatabaseWithRetryMechanism, 5000); // Retry after 5 seconds
+    });
+};
+
+connectDatabaseWithRetryMechanism();
 
 // Passport middleware
 app.use(passport.initialize());

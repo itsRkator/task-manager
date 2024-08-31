@@ -38,7 +38,25 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
-});
+}).single("avatar");
+
+// Middleware for error handling
+const handleMulterErrors = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    // A Multer error occurred when uploading.
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res
+        .status(400)
+        .json({ message: "File too large. Maximum size is 5MB." });
+    }
+    return res.status(400).json({ message: `Multer error: ${err.message}` });
+  } else if (err) {
+    // An unknown error occurred when uploading.
+    return res.status(400).json({ message: `Error: ${err.message}` });
+  }
+  // If no error, pass control to the next middleware
+  next();
+};
 
 // Get User profile
 router.get("/profile", async (req, res) => {
@@ -63,29 +81,36 @@ router.get("/profile", async (req, res) => {
 });
 
 // Update User Avatar
-router.post("/upload-avatar", upload.single("avatar"), async (req, res) => {
-  try {
-    const id = req.user.id;
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+router.post("/upload-avatar", (req, res, next) => {
+  upload(req, res, async function (err) {
+    if (err) {
+      // Handle multer-specific errors or any other errors
+      return handleMulterErrors(err, req, res, next);
     }
 
-    // Optionally, delete the previous avatar file here if needed
-    // fs.unlink(previousAvatarPath, (err) => { if (err) console.error(err); });
+    try {
+      const id = req.user.id;
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-    user.avatar = req.file.path;
-    await user.save();
-    res.json({
-      message: "Profile photo updated successfully.",
-      avatar: user.avatar,
-    });
-  } catch (err) {
-    console.error(`Error uploading avatar: ${err}`);
-    res
-      .status(500)
-      .json({ message: "Error uploading avatar", error: err.message });
-  }
+      // Optionally, delete the previous avatar file here if needed
+      // fs.unlink(previousAvatarPath, (err) => { if (err) console.error(err); });
+
+      user.avatar = req.file.path;
+      await user.save();
+      res.json({
+        message: "Profile photo updated successfully.",
+        avatar: user.avatar,
+      });
+    } catch (err) {
+      console.error(`Error uploading avatar: ${err}`);
+      res
+        .status(500)
+        .json({ message: "Error uploading avatar", error: err.message });
+    }
+  });
 });
 
 module.exports = router;
