@@ -1,20 +1,18 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
-import {
-  Button,
-  Container,
-  Typography,
-  Box,
-  Avatar,
-  IconButton,
-} from "@mui/material";
+import { Container, Typography, Box, Avatar, IconButton } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import apiUserService from "../services/apiUserService";
 import { useNotification } from "../contexts/NotificationContext";
 import { handleAuthError } from "../utils/authUtils";
+import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../utils/getErrorMessageUtils";
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
 
 const Profile = () => {
-  const {showNotification} = useNotification()
+  const { showNotification } = useNotification();
+  const navigate = useNavigate();
   const [user, setUser] = useState<{
     avatar: string;
     email: string;
@@ -34,35 +32,64 @@ const Profile = () => {
 
   useEffect(() => {
     let isMounted = true;
-  
+
     const fetchProfile = async () => {
       try {
         const response = await apiUserService.getUserProfile(token ?? "");
-        if (isMounted) {setUser(response.data.user);
-        showNotification("Successfully fetch user profile.", 'success');
+        if (isMounted) {
+          setUser(response.data.user);
+          showNotification("Successfully fetch user profile.", "success");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch user profile", error);
         handleAuthError({
-          err: error,
+          error,
           showNotification,
-          errorMessage:
-            "Failed to fetch user profile. Please try again.",
+          errorMessage: `Failed to fetch user profile. Please try again. Error: ${getErrorMessage(
+            error
+          )}`,
+          navigate,
         });
       }
     };
-  
+
     if (token) fetchProfile();
-  
+
     return () => {
       isMounted = false;
     };
-  }, [token]);
-  
+  }, [token, navigate, showNotification]);
 
   const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAvatar(e.target.files[0]);
+    try {
+      if (!e?.target?.files || e.target.files.length === 0) {
+        throw new Error("No file selected");
+      }
+
+      const file = e.target.files[0];
+
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error("File is too large. Maximum size is 2MB.");
+      }
+
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        throw new Error("Invalid file type. Only JPEG and PNG are allowed.");
+      }
+
+      setAvatar(file);
+      console.log("File selected:", file.name);
+
+      handleAvatarUpload();
+    } catch (error: any) {
+      console.error("Error handling file change:", error.message);
+      handleAuthError({
+        error,
+        showNotification,
+        errorMessage: `An error occurred while saving the task. Please try again. Error: ${getErrorMessage(
+          error
+        )}`,
+        navigate,
+      });
     }
   };
 
@@ -73,10 +100,29 @@ const Profile = () => {
     formData.append("avatar", avatar);
 
     try {
-      const response = await apiUserService.uploadAvatar(token || "", formData);
+      const response = await apiUserService.uploadAvatar(token ?? "", formData);
+
+      // Update user state with the new avatar URL/path
       setUser((prev) => ({ ...prev, avatar: response.data.avatar }));
-    } catch (error) {
+
+      // Optionally show a success notification
+      showNotification &&
+        showNotification("Avatar updated successfully!", "success");
+    } catch (error: any) {
       console.error("Failed to upload avatar", error);
+
+      // Handle error and show notification with the original dynamic errorMessage
+      handleAuthError({
+        error,
+        showNotification,
+        errorMessage: `Failed to upload avatar: ${
+          error?.response?.data?.error ||
+          error?.response?.data?.error?.[0]?.msg ||
+          error.message ||
+          "Unknown error occurred"
+        }`,
+        navigate,
+      });
     }
   };
 
@@ -97,7 +143,7 @@ const Profile = () => {
             />
             <Box
               position="absolute"
-              bottom={40}
+              bottom={-15}
               left={105}
               bgcolor="transparent"
               zIndex={10}
@@ -132,7 +178,7 @@ const Profile = () => {
             <Typography variant="body1" gutterBottom>
               User ID: {user.id}
             </Typography>
-            <Box mt={2}>
+            {/* <Box mt={2}>
               <Button
                 sx={{ textTransform: "none" }}
                 onClick={handleAvatarUpload}
@@ -142,7 +188,7 @@ const Profile = () => {
               >
                 Upload Avatar
               </Button>
-            </Box>
+            </Box> */}
           </Grid>
         </Grid>
       </Box>

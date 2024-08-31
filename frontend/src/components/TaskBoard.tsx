@@ -21,6 +21,8 @@ import { Task } from "../types";
 import CreateAndUpdateTask from "./CreateAndUpdateTask";
 import { useNotification } from "../contexts/NotificationContext";
 import { handleAuthError } from "../utils/authUtils";
+import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../utils/getErrorMessageUtils";
 
 const TaskBoard: React.FC = () => {
   const { showNotification } = useNotification();
@@ -31,6 +33,7 @@ const TaskBoard: React.FC = () => {
   const [searchParams, setSearchParams] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("createdAt");
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   const fetchTasks = useCallback(async () => {
     if (token) {
@@ -49,18 +52,21 @@ const TaskBoard: React.FC = () => {
           tasks.filter((task: Task) => task.status === "IN PROGRESS")
         );
         setDoneTasks(tasks.filter((task: Task) => task.status === "DONE"));
-      } catch (err) {
-        console.error("Failed to fetch tasks", err);
+      } catch (error: any) {
+        console.error("Failed to fetch tasks", error);
         handleAuthError({
-          err,
+          error,
           showNotification,
-          errorMessage: "Failed to fetch tasks. Please try again later.",
+          errorMessage: `Failed to fetch tasks. Please try again later. Error: ${getErrorMessage(
+            error
+          )}`,
+          navigate,
         });
       }
     } else {
       showNotification("No token available. Please log in.", "error");
     }
-  }, [token, searchParams, sortOption, showNotification]);
+  }, [token, searchParams, sortOption, showNotification, navigate]);
 
   useEffect(() => {
     fetchTasks();
@@ -127,30 +133,33 @@ const TaskBoard: React.FC = () => {
 
         // Refresh tasks to reflect the changes
         fetchTasks();
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to update task status", error);
         handleAuthError({
-          err: error,
+          error,
           showNotification,
-          errorMessage: "Failed to move task. Please try again later.",
+          errorMessage: `Failed to move task. Please try again later. Error: ${getErrorMessage(
+            error
+          )}`,
+          navigate,
         });
       }
     }
   };
 
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      // Call the API or handle the search logic here
-      setSearchParams(query);
-    }, 300), // Adjust the debounce delay (300 ms) as needed
-    []
-  );
+  const debouncedSearch = debounce((query: string) => {
+    // Call the API or handle the search logic here
+    setSearchParams(query);
+  }, 300); // Adjust the debounce delay (300 ms) as needed
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const query = event.target.value;
-    setSearchQuery(query);
-    debouncedSearch(query);
-  };
+  const handleSearch = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const query = event.target.value;
+      setSearchQuery(query);
+      debouncedSearch(query);
+    },
+    [debouncedSearch] // Include debouncedSearch as a dependency
+  );
 
   const handleSortChange = (event: SelectChangeEvent<string>) => {
     setSortOption(event.target.value);
