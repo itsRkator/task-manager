@@ -65,7 +65,7 @@ const ViewTasDialog: React.FC<ViewTaskProps> = ({
       </DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-slide-description">
-          <Typography variant="h5" component="h6" gutterBottom>
+          <Typography variant="body1" component="h6" gutterBottom>
             Title: {task.title}
           </Typography>
           <Typography variant="body1" component="p" gutterBottom>

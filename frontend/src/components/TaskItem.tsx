@@ -8,11 +8,14 @@ import ViewTasDialog from "./ViewTasDialog";
 import CreateAndUpdateTask from "./CreateAndUpdateTask";
 import { useNotification } from "../contexts/NotificationContext";
 import { handleAuthError } from "../utils/authUtils";
+import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../utils/getErrorMessageUtils";
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
   const { showNotification } = useNotification();
   const token = localStorage.getItem("token");
   const [isDialogOpened, setIsDialogOpened] = useState(false);
+  const navigate = useNavigate();
 
   const updateTask = useCallback(
     async (id?: string, title?: string, description?: string) => {
@@ -21,14 +24,16 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
           await apiTaskService.updateTask(token, id, { title, description });
           refreshTask();
           showNotification("Task has been updated successfully.", "success");
-        } catch (error) {
+        } catch (error: any) {
           console.error("Failed to update the task:", error);
 
           handleAuthError({
-            err: error,
+            error,
             showNotification,
-            errorMessage:
-              "An error occurred while trying to update the task. Please try again.",
+            errorMessage: `An error occurred while trying to update the task. Please try again. Error: ${getErrorMessage(
+              error
+            )}`,
+            navigate,
           });
         }
       } else {
@@ -38,7 +43,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
         );
       }
     },
-    [token, refreshTask, showNotification]
+    [token, refreshTask, showNotification, navigate]
   );
 
   const viewTaskDialogHandler = useCallback(() => {
@@ -52,18 +57,20 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
           await apiTaskService.deleteTask(token, taskId); // Attempt to delete the task
           refreshTask(); // Refresh the tasks if deletion is successful
           showNotification("Task has been deleted successfully.", "success");
-        } catch (error) {
+        } catch (error: any) {
           console.error("Failed to delete the task:", error); // Handle the error
           handleAuthError({
-            err: error,
+            error,
             showNotification,
-            errorMessage:
-              "An error occurred while trying to delete the task. Please try again.",
+            errorMessage: `An error occurred while trying to delete the task. Please try again. Error: ${getErrorMessage(
+              error
+            )}`,
+            navigate,
           });
         }
       }
     },
-    [token, refreshTask, showNotification]
+    [token, refreshTask, showNotification, navigate]
   );
 
   return (

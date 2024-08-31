@@ -18,6 +18,7 @@ import apiAuthService from "../services/apiAuthService";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../contexts/NotificationContext";
 import { handleAuthError } from "../utils/authUtils";
+import { getErrorMessage } from "../utils/getErrorMessageUtils";
 
 interface State {
   firstName: string;
@@ -116,12 +117,15 @@ const SignUp: React.FC = () => {
         "success"
       );
       navigate("/login");
-    } catch (err) {
-      console.error("Sign up failed", err);
+    } catch (error: any) {
+      console.error("Sign up failed", error);
       handleAuthError({
-        err,
+        error,
         showNotification,
-        errorMessage: "Sign up failed. Please try again later.",
+        errorMessage: `Sign up failed. Please try again later. Error: ${getErrorMessage(
+          error
+        )}`,
+        navigate,
       });
     }
   };

@@ -14,6 +14,8 @@ import { TaskCreateProps } from "../types";
 import apiTaskService from "../services/apiTaskService";
 import { useNotification } from "../contexts/NotificationContext";
 import { handleAuthError } from "../utils/authUtils";
+import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../utils/getErrorMessageUtils";
 
 const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
   onTaskCreateAndUpdate,
@@ -28,7 +30,7 @@ const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
     reminder: task?.reminder ? new Date(task.reminder) : null,
   });
   const [open, setOpen] = useState(false);
-
+  const navigate = useNavigate();
   const token = localStorage.getItem("token") || "";
 
   const resetForm = useCallback(() => {
@@ -66,19 +68,22 @@ const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
           dueDate,
           reminder,
         });
+        onTaskCreateAndUpdate();
         showNotification("Task created successfully.", "success");
       } else {
         onTaskCreateAndUpdate(task?._id, title, description);
         showNotification("Task updated successfully.", "success");
       }
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save task", error);
       handleAuthError({
-        err: error,
+        error,
         showNotification,
-        errorMessage:
-          "An error occurred while saving the task. Please try again.",
+        errorMessage: `An error occurred while saving the task. Please try again. Error: ${getErrorMessage(
+          error
+        )}`,
+        navigate,
       });
     }
   };
