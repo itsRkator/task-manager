@@ -77,18 +77,27 @@ Make sure you have the following installed:
 
 3. **Environment Variables:**
 
-   Create a `.env` file in the root directory for both frontend and backend with the following variables:
+   Create a `.env` file in the backend directory for backend with the following variables:
 
    ```env
-   # Backend
-   PORT=5000
-   DATABASE_URL=<Your Database URL>
+   # DB Config
+   MONGO_URI=<Your Database URI> # Used MongoDb
    JWT_SECRET=<Your JWT Secret>
+   
+   # Google Auth Config
    GOOGLE_CLIENT_ID=<Your Google Client ID>
    GOOGLE_CLIENT_SECRET=<Your Google Client Secret>
 
-   # Frontend
-   REACT_APP_API_URL=<Backend API URL>
+   # Environment-specific URLs
+   FRONTEND_URL=http://localhost:3000  # Change this to your frontend production URL when deploying
+   BACKEND_URL=http://localhost:8000   # Change this to your backend production URL when deploying
+   ```
+
+   Create a `.env` file in the frontend directory for frontend with the following variables:
+
+   ```env
+   # Environment-specific URLs
+   REACT_APP_API_URL=http://localhost:8000/api  # Change this to your backend production URL when deploying
    ```
 
 ### Running the Application
