@@ -7,6 +7,7 @@ import apiTaskService from "../services/apiTaskService";
 import ViewTasDialog from "./ViewTasDialog";
 import CreateAndUpdateTask from "./CreateAndUpdateTask";
 import { useNotification } from "../contexts/NotificationContext";
+import { handleAuthError } from "../utils/authUtils";
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
   const { showNotification } = useNotification();
@@ -22,10 +23,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
           showNotification("Task has been updated successfully.", "success");
         } catch (error) {
           console.error("Failed to update the task:", error);
-          showNotification(
-            "An error occurred while trying to update the task. Please try again.",
-            "error"
-          );
+
+          handleAuthError({
+            err: error,
+            showNotification,
+            errorMessage:
+              "An error occurred while trying to update the task. Please try again.",
+          });
         }
       } else {
         showNotification(
@@ -50,10 +54,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, refreshTask }) => {
           showNotification("Task has been deleted successfully.", "success");
         } catch (error) {
           console.error("Failed to delete the task:", error); // Handle the error
-          showNotification(
-            "An error occurred while trying to delete the task. Please try again.",
-            "error"
-          );
+          handleAuthError({
+            err: error,
+            showNotification,
+            errorMessage:
+              "An error occurred while trying to delete the task. Please try again.",
+          });
         }
       }
     },
