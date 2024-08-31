@@ -20,6 +20,7 @@ import TaskColumn from "./TaskColumn";
 import { Task } from "../types";
 import CreateAndUpdateTask from "./CreateAndUpdateTask";
 import { useNotification } from "../contexts/NotificationContext";
+import { handleAuthError } from "../utils/authUtils";
 
 const TaskBoard: React.FC = () => {
   const { showNotification } = useNotification();
@@ -39,21 +40,22 @@ const TaskBoard: React.FC = () => {
           sortBy: sortOption,
           sortOrder: "asc",
         });
-        setTodoTasks(
-          response.data.filter((task: Task) => task.status === "TODO")
-        );
+        const tasks = response.data.tasks;
+        if (tasks.length === 0) {
+          showNotification("You have no any task schedule.", "success");
+        }
+        setTodoTasks(tasks.filter((task: Task) => task.status === "TODO"));
         setInProgressTasks(
-          response.data.filter((task: Task) => task.status === "IN PROGRESS")
+          tasks.filter((task: Task) => task.status === "IN PROGRESS")
         );
-        setDoneTasks(
-          response.data.filter((task: Task) => task.status === "DONE")
-        );
+        setDoneTasks(tasks.filter((task: Task) => task.status === "DONE"));
       } catch (err) {
         console.error("Failed to fetch tasks", err);
-        showNotification(
-          "Failed to fetch tasks. Please try again later.",
-          "error"
-        );
+        handleAuthError({
+          err,
+          showNotification,
+          errorMessage: "Failed to fetch tasks. Please try again later.",
+        });
       }
     } else {
       showNotification("No token available. Please log in.", "error");
@@ -127,10 +129,11 @@ const TaskBoard: React.FC = () => {
         fetchTasks();
       } catch (error) {
         console.error("Failed to update task status", error);
-        showNotification(
-          "Failed to move task. Please try again later.",
-          "error"
-        );
+        handleAuthError({
+          err: error,
+          showNotification,
+          errorMessage: "Failed to move task. Please try again later.",
+        });
       }
     }
   };

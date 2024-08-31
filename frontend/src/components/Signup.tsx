@@ -17,6 +17,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import apiAuthService from "../services/apiAuthService";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../contexts/NotificationContext";
+import { handleAuthError } from "../utils/authUtils";
 
 interface State {
   firstName: string;
@@ -117,7 +118,11 @@ const SignUp: React.FC = () => {
       navigate("/login");
     } catch (err) {
       console.error("Sign up failed", err);
-      showNotification("Sign up failed. Please try again later.", "error");
+      handleAuthError({
+        err,
+        showNotification,
+        errorMessage: "Sign up failed. Please try again later.",
+      });
     }
   };
 

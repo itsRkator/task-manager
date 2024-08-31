@@ -12,6 +12,7 @@ import React, {
 import { useNavigate, useLocation } from "react-router-dom";
 import apiAuthService from "../services/apiAuthService";
 import { useNotification } from "./NotificationContext";
+import { handleAuthError } from "../utils/authUtils";
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -74,10 +75,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         navigate("/");
       } catch (error) {
         console.error("Login failed", error);
-        showNotification(
-          "Login failed. Please check your credentials and try again.",
-          "error"
-        );
+        handleAuthError({
+          err: error,
+          showNotification,
+          errorMessage:
+            "Login failed. Please check your credentials and try again.",
+        });
       }
     },
     [navigate, showNotification]

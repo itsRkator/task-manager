@@ -13,6 +13,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { TaskCreateProps } from "../types";
 import apiTaskService from "../services/apiTaskService";
 import { useNotification } from "../contexts/NotificationContext";
+import { handleAuthError } from "../utils/authUtils";
 
 const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
   onTaskCreateAndUpdate,
@@ -73,10 +74,12 @@ const CreateAndUpdateTask: React.FC<TaskCreateProps> = ({
       handleClose();
     } catch (error) {
       console.error("Failed to save task", error);
-      showNotification(
-        "An error occurred while saving the task. Please try again.",
-        "error"
-      );
+      handleAuthError({
+        err: error,
+        showNotification,
+        errorMessage:
+          "An error occurred while saving the task. Please try again.",
+      });
     }
   };
 

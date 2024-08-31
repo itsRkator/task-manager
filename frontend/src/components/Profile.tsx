@@ -10,8 +10,11 @@ import {
 import Grid from "@mui/material/Grid2";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import apiUserService from "../services/apiUserService";
+import { useNotification } from "../contexts/NotificationContext";
+import { handleAuthError } from "../utils/authUtils";
 
 const Profile = () => {
+  const {showNotification} = useNotification()
   const [user, setUser] = useState<{
     avatar: string;
     email: string;
@@ -30,16 +33,32 @@ const Profile = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
+    let isMounted = true;
+  
     const fetchProfile = async () => {
       try {
         const response = await apiUserService.getUserProfile(token ?? "");
-        setUser(response.data.user);
+        if (isMounted) {setUser(response.data.user);
+        showNotification("Successfully fetch user profile.", 'success');
+        }
       } catch (error) {
         console.error("Failed to fetch user profile", error);
+        handleAuthError({
+          err: error,
+          showNotification,
+          errorMessage:
+            "Failed to fetch user profile. Please try again.",
+        });
       }
     };
-    fetchProfile();
+  
+    if (token) fetchProfile();
+  
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
+  
 
   const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
