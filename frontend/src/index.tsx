@@ -5,7 +5,7 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import theme from "./theme";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 
@@ -17,11 +17,11 @@ root.render(
     <NotificationProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
+        <HashRouter>
           <AuthProvider>
             <App />
           </AuthProvider>
-        </BrowserRouter>
+        </HashRouter>
       </ThemeProvider>
     </NotificationProvider>
   </React.StrictMode>
