@@ -110,7 +110,7 @@ router.get(
       });
 
       // Redirect to frontend with token
-      res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
+      res.redirect(`${process.env.FRONTEND_URL}/#?token=${token}`);
     } catch (err) {
       console.error(`Error in Google OAuth: ${err}`);
       res.status(500).json({ message: "Internal server error" });
