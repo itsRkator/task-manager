@@ -208,10 +208,6 @@ To deploy:
 2. **Frontend Deployment:**
     - Use services like Vercel or Netlify.
 
-## Contributing
-
-Feel free to fork the repository and submit pull requests. For major changes, please open an issue to discuss what you would like to change.
-
 ## License
 
 This project is licensed under the MIT License.
