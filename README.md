@@ -59,8 +59,8 @@ Make sure you have the following installed:
 1. **Clone the repository:**
 
     ```bash
-    git clone <repository-url>
-    cd task-manager-application
+    git clone [<repository-url>](https://github.com/itsRkator/task-manager.git)
+    cd task-manager
     ```
 
 2. **Install the dependencies:**
